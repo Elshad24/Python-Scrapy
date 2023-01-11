@@ -17,6 +17,7 @@ soup_1 = BeautifulSoup(content_1.text,'html.parser')
 category_links = []
 paginated_links = []
 products_links = []
+prod_det = []
 temp = soup_1.find_all('div',class_='menu-open menu-open-item')
 
 
@@ -55,10 +56,37 @@ def get_prod_links(paginated_links):
   return products_links
 
 
+def get_prod_firstly_details(paginated_links):
+  for urls in paginated_links:
+    content_3 = requests.get(urls)
+    soup_3 = BeautifulSoup(content_3.text,'html.parser')
+    a = soup_1.find_all('div',class_='cart-body-top')
+    for i in a:
+      try:
+          price = float(i.find('div', class_='cart-footer').find('span').text.replace(' M',''))
+      except:
+          price = None
+      try:
+          discount = i.find('div', class_='pleft').text.split('-')[1].replace('M','')
+          discount_type = i.find('div', class_='pleft').text.split('-')[0]
+      except:
+          discount_type = None 
+          discount = None
+
+      dc={'Name':i.find('div', class_ = 'name').find('a').text.strip(),
+          'Price':price,
+          'Discount_Type': discount_type,
+          'Discounted_Price': discount
+          }
+      prod_det.append(dc)
+  return prod_det
+
+
 def main():
   get_category_links(temp)
   pagination(category_links)
   get_prod_links(paginated_links)
+  get_prod_firstly_details(paginated_links)
 
 
 if __name__ == '__main__':
