@@ -1,0 +1,65 @@
+from bs4 import BeautifulSoup
+from multiprocessing import Process
+import requests
+import threading
+import pandas as pd
+import time
+import concurrent.futures
+import warnings
+warnings.filterwarnings('ignore')
+# pd.set_option('display.max_rows', 5000)
+# pd.set_option('display.max_columns', 5000)
+# pd.set_option('display.width', -1)
+
+url = 'https://kontakt.az/'
+content_1 = requests.get(url)
+soup_1 = BeautifulSoup(content_1.text,'html.parser')
+category_links = []
+paginated_links = []
+products_links = []
+temp = soup_1.find_all('div',class_='menu-open menu-open-item')
+
+
+def get_category_links(temp):
+    for i in temp:
+        for j in i.find_all('a',class_='menuliparent_a'):
+            if j.get('href') in category_links or len(j.get('href').split('/')) > 6:
+                break
+            else:
+                category_links.append(j.get('href'))
+    return category_links
+
+
+def pagination(category_links):
+    for link in category_links:
+      content_2 = requests.get(link)
+      soup_2 = BeautifulSoup(content_2.text,'html.parser')
+      try:
+          b = soup_2.find('span',class_='pages').text.split(' / ')[1]
+          a = soup_2.find('span',class_='pages').text.split(' / ')[0]
+      except:
+          b = 1
+          a = 1
+      for i in range(int(a),int(b)+1):
+        paginated_links.append(link + 'page/' + str(i) + '/')
+    return paginated_links
+
+
+def get_prod_links(paginated_links):
+  for urls in paginated_links:
+    content_3 = requests.get(urls)
+    soup_3 = BeautifulSoup(content_3.text,'html.parser')
+    a = soup_3.find_all('a',draggable='false')
+    for url in a:
+      products_links.append(url.get('href'))
+  return products_links
+
+
+def main():
+  get_category_links(temp)
+  pagination(category_links)
+  get_prod_links(paginated_links)
+
+
+if __name__ == '__main__':
+  main()
